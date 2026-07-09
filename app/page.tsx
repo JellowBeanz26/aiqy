@@ -193,9 +193,34 @@ function Builder({ onCreated, flash }: { onCreated: (id: string) => void; flash:
   const [tools, setTools] = useState<string[]>(["http_request"]);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ validation: Validation } | null>(null);
+  const [idea, setIdea] = useState("");
+  const [designing, setDesigning] = useState(false);
 
   function toggle(slug: string) {
     setTools((t) => (t.includes(slug) ? t.filter((s) => s !== slug) : [...t, slug]));
+  }
+
+  async function design() {
+    if (!idea.trim() || designing) return;
+    setDesigning(true);
+    try {
+      const r = await fetch("/api/design", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ idea }),
+      });
+      const j = (await r.json()) as { name?: string; instructions?: string; toolSlugs?: string[]; error?: string };
+      if (r.ok) {
+        setName(j.name ?? "");
+        setPrompt(j.instructions ?? "");
+        setTools(j.toolSlugs ?? []);
+        flash("Drafted by AI — review and build.");
+      } else {
+        flash(j.error || "Design failed.");
+      }
+    } finally {
+      setDesigning(false);
+    }
   }
 
   async function build() {
@@ -234,6 +259,29 @@ function Builder({ onCreated, flash }: { onCreated: (id: string) => void; flash:
         Write it in plain language — it becomes the agent&apos;s brain. AIQY generates a real, durable agent on your own
         model, then runs it.
       </p>
+
+      <div className="aidesign">
+        <div className="ai-eyebrow">✨ design with AI</div>
+        <div className="ai-row">
+          <input
+            className="input"
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void design();
+              }
+            }}
+            placeholder="one line — e.g. watch Hacker News and summarize the top AI stories for me"
+            aria-label="Describe your idea in one line"
+          />
+          <button className="build" type="button" onClick={design} disabled={designing || !idea.trim()}>
+            {designing ? "Designing…" : "Design"} <span className="arrow">✨</span>
+          </button>
+        </div>
+        <div className="ai-hint">The model drafts a name, instructions, and tools below — review, tweak, then build.</div>
+      </div>
 
       <div className="builder">
         <input

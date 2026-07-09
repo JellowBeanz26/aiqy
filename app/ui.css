@@ -395,6 +395,36 @@ h1.q em {
   font-family: var(--font-mono);
 }
 
+/* AI design strip */
+.aidesign {
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: var(--r);
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.05));
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.ai-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+  margin-bottom: 10px;
+}
+.ai-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.ai-row .input {
+  flex: 1;
+}
+.ai-hint {
+  margin-top: 9px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 /* generated output / validation */
 .out {
   margin-top: 24px;
