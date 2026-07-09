@@ -31,22 +31,55 @@ describe what you want.
 - **Self-hosted & private.** Runs on your machine. Your model, your keys, your data.
 - **Open source.** MIT licensed. Fork it, extend it, ship it.
 
-## Quickstart
+## Installation
 
-Requirements: **Node.js ≥ 24**.
+### Prerequisites
+
+- **Node.js ≥ 24** — [download here](https://nodejs.org).
+- **A model** — either a local model via [Ollama](https://ollama.com) (free & private) or a
+  cloud API key (OpenAI, Anthropic, Google, Groq, OpenRouter). You can set this up after install.
+
+### 1. Get the code
 
 ```bash
+git clone https://github.com/JellowBeanz26/aiqy.git
 cd aiqy
-npm install
-npm run dev
-# open http://localhost:4300
 ```
 
-1. **First run** installs a shared Eve runtime once (~30s).
-2. Open **Settings** and point AIQY at a model — e.g. Ollama:
-   `http://127.0.0.1:11434/v1`, model `llama3.1`. (Presets included.)
-3. On **New agent**, describe what it should do, pick tools, hit **Build agent**.
-4. Chat with it. Done.
+_(Or download the ZIP from the green **Code** button on GitHub and unzip it.)_
+
+### 2. Install & run
+
+```bash
+npm install
+npm run dev
+```
+
+Open **http://localhost:4300**. The first run installs a shared Eve runtime once (~30s — one time only).
+
+### 3. Connect a model
+
+In **Settings**, pick one:
+
+- **Local — free & private.** Install [Ollama](https://ollama.com), then pull a model:
+  ```bash
+  ollama pull qwen2.5:3b     # small & fast — good on a laptop CPU
+  ```
+  In Settings → **Local model** → **Connect** (`http://127.0.0.1:11434/v1`) → choose the model.
+- **Cloud — fast & powerful.** Settings → **Cloud API** → paste any key
+  (`sk-…` OpenAI, `sk-ant-…` Anthropic, `AIza…` Google, `gsk_…` Groq, `sk-or-…` OpenRouter).
+  AIQY detects the provider and lists its models automatically.
+
+> On a CPU-only machine, prefer ~3B–7B local models (or an MoE like `qwen3:30b-a3b`), or use a
+> cloud key for the biggest models.
+
+### 4. Build an agent
+
+- **Talk to Json** — describe what you want in the chat; Json designs it, writes any tools it
+  needs, and builds it.
+- Or **New agent** — write the instructions, pick tools, and hit **Build agent**.
+
+Then chat with your agent. That's it. 🎉
 
 ## How it works
 
