@@ -1,0 +1,24 @@
+{
+  "name": "aiqy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AIQY — describe an agent in plain language, AIQY builds and runs a real durable agent on your own model. Built on Eve.",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 4300",
+    "build": "next build",
+    "start": "next start -p 4300",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.2.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@types/node": "25.9.1",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3",
+    "typescript": "6.0.3"
+  }
+}

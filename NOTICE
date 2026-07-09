@@ -1,0 +1,13 @@
+AIQY
+Copyright (c) 2026 AIQY authors
+
+This product is built on top of Eve (https://github.com/vercel/eve), the
+open-source agent framework by Vercel, Inc., which is licensed under the
+Apache License, Version 2.0.
+
+AIQY uses Eve as its agent runtime: agents that AIQY generates are Eve
+projects, and AIQY runs them via the `eve` CLI. AIQY does not include or
+redistribute Eve's source code; Eve is installed from npm as a dependency.
+
+"Eve" and "Vercel" are trademarks of Vercel, Inc. AIQY is an independent
+project and is not affiliated with, endorsed by, or sponsored by Vercel.
