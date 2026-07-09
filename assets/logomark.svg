@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="AIQY">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <radialGradient id="gv" cx="80%" cy="12%" r="70%">
+      <stop offset="0" stop-color="#8b5cf6" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gb" cx="16%" cy="96%" r="70%">
+      <stop offset="0" stop-color="#3b82f6" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="60" fill="#0b1120"/>
+  <rect width="256" height="256" rx="60" fill="url(#gv)"/>
+  <rect width="256" height="256" rx="60" fill="url(#gb)"/>
+  <rect width="256" height="256" rx="60" fill="url(#sheen)"/>
+  <rect x="1.25" y="1.25" width="253.5" height="253.5" rx="58.75" fill="none" stroke="#334155" stroke-opacity="0.6" stroke-width="2.5"/>
+
+  <!-- the AIQY // motif: two gradient slashes -->
+  <g transform="translate(128,128) rotate(18)">
+    <rect x="-40" y="-68" width="30" height="136" rx="9" fill="url(#g)"/>
+    <rect x="10" y="-68" width="30" height="136" rx="9" fill="url(#g)"/>
+  </g>
+</svg>

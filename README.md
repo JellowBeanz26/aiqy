@@ -1,6 +1,17 @@
-# AIQY //
+<p align="center">
+  <img src="assets/logo.svg" alt="AIQY — the open agent studio" width="460" />
+</p>
 
-**Describe an agent in plain language — AIQY builds and runs a real, durable AI agent on _your own_ model.**
+<p align="center">
+  <strong>Describe an agent in plain language — AIQY builds and runs a real, durable AI agent on <em>your own</em> model.</strong>
+</p>
+
+<p align="center">
+  <a href="#installation">Install</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#security">Security</a> ·
+  <a href="#built-on-eve">Built on Eve</a>
+</p>
 
 AIQY is an open-source, self-hostable studio for building AI agents. You write what
 the agent should do, pick a few tools, and AIQY generates a real agent, compiles it,
