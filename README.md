@@ -27,7 +27,9 @@ Or just **talk to Json** — a chat-first builder that designs the agent, writes
 code itself (compiling and self-correcting until it works), and builds it while you
 describe what you want.
 
-![AIQY — describe, generate, run](assets/builder.png)
+<p align="center">
+  <img src="assets/demo.gif" alt="Talk to Json — it designs, writes, and builds your agent" width="820" />
+</p>
 
 ---
 
