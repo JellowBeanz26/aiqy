@@ -72,6 +72,33 @@
   font-size: 16px;
   line-height: 1;
 }
+.jsonbtn {
+  margin: 2px 14px 8px;
+  padding: 9px 12px;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: var(--r-sm);
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.14), rgba(59, 130, 246, 0.08));
+  color: var(--text);
+  font: inherit;
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.jsonbtn:hover,
+.jsonbtn.on {
+  border-color: var(--violet);
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.24), rgba(59, 130, 246, 0.13));
+}
+.jsonbtn .spark {
+  font-size: 15px;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 .navlabel {
   padding: 6px 18px;
   font-size: 10.5px;
@@ -710,6 +737,35 @@ h1.q em {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  margin-bottom: 18px;
+}
+.tab {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 7px 16px;
+  border-radius: 100px;
+  cursor: pointer;
+}
+.tab.on {
+  background: var(--grad);
+  color: white;
+}
+select.input {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
 }
 
 /* setup screen */

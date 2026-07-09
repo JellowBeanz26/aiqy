@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Chat from "./_components/Chat";
+import JsonChat from "./_components/JsonChat";
 import { TOOL_LIBRARY } from "@/lib/tool-library";
 import type { AgentMeta, ModelConfig, Validation } from "@/lib/types";
 
-type Mode = "builder" | "settings" | "agent";
+type Mode = "builder" | "settings" | "agent" | "json";
 
 export default function Page() {
   const [ready, setReady] = useState<boolean | null>(null);
@@ -68,6 +69,9 @@ export default function Page() {
           AIQY<span className="slashes">//</span>
           <span className="tag">studio</span>
         </button>
+        <button className={`jsonbtn ${mode === "json" ? "on" : ""}`} type="button" onClick={() => { setMode("json"); setSelectedId(null); }}>
+          <span className="spark">✦</span> Build with Json
+        </button>
         <button
           className="newbtn"
           type="button"
@@ -125,6 +129,15 @@ export default function Page() {
 
         {ready === false ? (
           <Setup installing={installing} onInstall={installRuntime} />
+        ) : mode === "json" ? (
+          <JsonChat
+            onBuilt={async (id) => {
+              await refreshAgents();
+              setSelectedId(id);
+              setMode("agent");
+              flash("Json built your agent.");
+            }}
+          />
         ) : mode === "settings" ? (
           <Settings
             settings={settings}
@@ -337,18 +350,81 @@ function Builder({ onCreated, flash }: { onCreated: (id: string) => void; flash:
 }
 
 /* ---------------- Settings ---------------- */
-const PRESETS: { label: string; cfg: Partial<ModelConfig> }[] = [
-  { label: "Ollama (local)", cfg: { providerName: "ollama", baseURL: "http://127.0.0.1:11434/v1", modelId: "llama3.1", contextWindow: 8192 } },
-  { label: "LM Studio", cfg: { providerName: "lmstudio", baseURL: "http://127.0.0.1:1234/v1", modelId: "local-model", contextWindow: 8192 } },
-  { label: "OpenAI", cfg: { providerName: "openai", baseURL: "https://api.openai.com/v1", modelId: "gpt-4o-mini", contextWindow: 128000 } },
+interface DetectedProvider {
+  id: string;
+  label: string;
+  baseURL: string;
+  defaultContextWindow: number;
+}
+
+const LOCAL_PRESETS: { label: string; baseURL: string }[] = [
+  { label: "Ollama", baseURL: "http://127.0.0.1:11434/v1" },
+  { label: "LM Studio", baseURL: "http://127.0.0.1:1234/v1" },
+  { label: "vLLM", baseURL: "http://127.0.0.1:8000/v1" },
 ];
 
 function Settings({ settings, onSave }: { settings: ModelConfig | null; onSave: (c: ModelConfig) => void }) {
-  const [cfg, setCfg] = useState<ModelConfig>(
-    settings ?? { providerName: "local", baseURL: "http://127.0.0.1:11434/v1", apiKey: "", modelId: "llama3.1", contextWindow: 8192 },
+  const isCloud = Boolean(
+    settings?.apiKey && settings.apiKey !== "ollama" && !/127\.0\.0\.1|localhost/.test(settings.baseURL),
   );
+  const [tab, setTab] = useState<"cloud" | "local">(isCloud ? "cloud" : "local");
+  const [apiKey, setApiKey] = useState(settings?.apiKey && settings.apiKey !== "ollama" ? settings.apiKey : "");
+  const [baseURL, setBaseURL] = useState(settings?.baseURL || "http://127.0.0.1:11434/v1");
+  const [provider, setProvider] = useState<DetectedProvider | null>(null);
+  const [models, setModels] = useState<string[]>([]);
+  const [modelId, setModelId] = useState(settings?.modelId || "");
+  const [ctx, setCtx] = useState<number>(settings?.contextWindow || 8192);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  const set = (patch: Partial<ModelConfig>) => setCfg((c) => ({ ...c, ...patch }));
+  function reset() {
+    setModels([]);
+    setProvider(null);
+    setErr(null);
+  }
+
+  async function connect() {
+    setLoading(true);
+    reset();
+    try {
+      const body = tab === "cloud" ? { apiKey } : { baseURL };
+      const r = await fetch("/api/models", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const j = (await r.json()) as { provider?: DetectedProvider; models?: string[]; error?: string };
+      if (j.provider) {
+        setProvider(j.provider);
+        if (tab === "cloud") setBaseURL(j.provider.baseURL);
+        setCtx((c) => c || j.provider!.defaultContextWindow);
+      }
+      if (j.models && j.models.length) {
+        setModels(j.models);
+        setModelId((m) => (j.models!.includes(m) ? m : j.models![0]));
+      }
+      if (j.error) setErr(j.error);
+      else if (!j.models || !j.models.length) setErr("Connected, but no models came back.");
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function save() {
+    if (!modelId) {
+      setErr("Pick a model first.");
+      return;
+    }
+    onSave({
+      providerName: provider?.id || (tab === "cloud" ? "cloud" : "local"),
+      baseURL: tab === "cloud" ? provider?.baseURL || baseURL : baseURL,
+      apiKey: tab === "cloud" ? apiKey : apiKey || "ollama",
+      modelId,
+      contextWindow: ctx || provider?.defaultContextWindow || 8192,
+    });
+  }
 
   return (
     <div className="canvas">
@@ -359,72 +435,88 @@ function Settings({ settings, onSave }: { settings: ModelConfig | null; onSave: 
         Connect <em>any</em> model
       </h1>
       <p className="sub">
-        Any OpenAI-compatible endpoint — local (Ollama, LM Studio, vLLM) or cloud. Runs entirely outside the Vercel
-        Gateway. Your key stays on this machine.
+        Two ways in: a <strong>cloud API key</strong> (GPT, Claude, Gemini, Groq, OpenRouter…) — AIQY detects the
+        provider and lists its models — or a <strong>local model</strong>. Your key stays on this machine.
       </p>
 
+      <div className="tabs">
+        <button type="button" className={`tab ${tab === "cloud" ? "on" : ""}`} onClick={() => { setTab("cloud"); reset(); }}>
+          Cloud API
+        </button>
+        <button type="button" className={`tab ${tab === "local" ? "on" : ""}`} onClick={() => { setTab("local"); reset(); }}>
+          Local model
+        </button>
+      </div>
+
       <div className="form">
-        <div className="presets">
-          {PRESETS.map((p) => (
-            <button key={p.label} type="button" className="ctl" onClick={() => set(p.cfg)}>
-              {p.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="field">
-          <label htmlFor="baseURL">Base URL</label>
-          <input
-            id="baseURL"
-            className="input mono"
-            value={cfg.baseURL}
-            onChange={(e) => set({ baseURL: e.target.value })}
-            placeholder="http://127.0.0.1:11434/v1"
-          />
-          <span className="hint">The OpenAI-compatible endpoint (ends in /v1). For Ollama in Docker use host.docker.internal.</span>
-        </div>
-
-        <div className="grid2">
+        {tab === "cloud" ? (
           <div className="field">
-            <label htmlFor="modelId">Model id</label>
-            <input id="modelId" className="input mono" value={cfg.modelId} onChange={(e) => set({ modelId: e.target.value })} placeholder="llama3.1" />
+            <label htmlFor="key">API key</label>
+            <div className="ai-row">
+              <input
+                id="key"
+                className="input mono"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="paste any key — sk-… / sk-ant-… / AIza… / gsk_… / sk-or-…"
+              />
+              <button className="btn" type="button" onClick={connect} disabled={loading || !apiKey.trim()}>
+                {loading ? "Connecting…" : "Connect"}
+              </button>
+            </div>
+            <span className="hint">Auto-detects OpenAI, Anthropic (Claude), Google (Gemini), Groq, or OpenRouter from the key.</span>
           </div>
+        ) : (
           <div className="field">
-            <label htmlFor="ctx">Context window (tokens)</label>
-            <input
-              id="ctx"
-              className="input mono"
-              type="number"
-              value={cfg.contextWindow}
-              onChange={(e) => set({ contextWindow: Number(e.target.value) })}
-            />
-            <span className="hint">Required — lets AIQY skip the Vercel model catalog.</span>
+            <label htmlFor="baseURL">Local endpoint (OpenAI-compatible)</label>
+            <div className="presets">
+              {LOCAL_PRESETS.map((p) => (
+                <button key={p.label} type="button" className="ctl" onClick={() => setBaseURL(p.baseURL)}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div className="ai-row" style={{ marginTop: 8 }}>
+              <input id="baseURL" className="input mono" value={baseURL} onChange={(e) => setBaseURL(e.target.value)} placeholder="http://127.0.0.1:11434/v1" />
+              <button className="btn" type="button" onClick={connect} disabled={loading || !baseURL.trim()}>
+                {loading ? "Connecting…" : "Connect"}
+              </button>
+            </div>
+            <span className="hint">Ollama, LM Studio, vLLM… AIQY lists the models you have installed.</span>
           </div>
-        </div>
+        )}
 
-        <div className="grid2">
-          <div className="field">
-            <label htmlFor="provider">Provider name</label>
-            <input id="provider" className="input mono" value={cfg.providerName} onChange={(e) => set({ providerName: e.target.value })} placeholder="local" />
-          </div>
-          <div className="field">
-            <label htmlFor="key">API key (optional)</label>
-            <input
-              id="key"
-              className="input mono"
-              type="password"
-              value={cfg.apiKey ?? ""}
-              onChange={(e) => set({ apiKey: e.target.value })}
-              placeholder="leave blank for local models"
-            />
-          </div>
-        </div>
+        {provider && tab === "cloud" && <div className="hint" style={{ color: "var(--ok)" }}>Detected: {provider.label}</div>}
+        {err && <div className="hint" style={{ color: "var(--err)" }}>{err}</div>}
 
-        <div>
-          <button className="build" type="button" onClick={() => onSave(cfg)}>
-            Save connection <span className="arrow">→</span>
-          </button>
-        </div>
+        {models.length > 0 && (
+          <>
+            <div className="grid2">
+              <div className="field">
+                <label htmlFor="modelId">Model</label>
+                <select id="modelId" className="input mono" value={modelId} onChange={(e) => setModelId(e.target.value)}>
+                  {models.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <span className="hint">{models.length} models available.</span>
+              </div>
+              <div className="field">
+                <label htmlFor="ctx">Context window (tokens)</label>
+                <input id="ctx" className="input mono" type="number" value={ctx} onChange={(e) => setCtx(Number(e.target.value))} />
+                <span className="hint">Lets AIQY skip the Vercel model catalog.</span>
+              </div>
+            </div>
+            <div>
+              <button className="build" type="button" onClick={save}>
+                Save connection <span className="arrow">→</span>
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
