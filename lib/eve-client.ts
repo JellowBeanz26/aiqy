@@ -8,9 +8,14 @@ export interface Session {
   index: number; // event cursor for ?startIndex on continue turns
 }
 
+export interface TurnEvent {
+  type: string;
+  at?: string;
+}
+
 export interface TurnCallbacks {
   onDelta?: (soFar: string) => void;
-  onEvent?: (type: string) => void;
+  onEvent?: (e: TurnEvent) => void;
 }
 
 const base = (id: string): string => `/api/agents/${encodeURIComponent(id)}/eve/v1`;
@@ -62,14 +67,18 @@ export async function readTurn(id: string, s: Session, cb: TurnCallbacks = {}): 
       const line = buf.slice(0, nl).trim();
       buf = buf.slice(nl + 1);
       if (!line) continue;
-      let evt: { type?: string; data?: { messageSoFar?: string; message?: string; finishReason?: string } };
+      let evt: {
+        type?: string;
+        meta?: { at?: string };
+        data?: { messageSoFar?: string; message?: string; finishReason?: string };
+      };
       try {
         evt = JSON.parse(line);
       } catch {
         continue;
       }
       s.index++;
-      if (evt.type) cb.onEvent?.(evt.type);
+      if (evt.type) cb.onEvent?.({ type: evt.type, at: evt.meta?.at });
       if (evt.type === "message.appended" && typeof evt.data?.messageSoFar === "string") {
         cb.onDelta?.(evt.data.messageSoFar);
       }

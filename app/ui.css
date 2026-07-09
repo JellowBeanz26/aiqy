@@ -749,10 +749,101 @@ h1.q em {
   box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.6);
 }
 
+/* activity rail — the open run trace (Studio) */
+.runwrap {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.runwrap .chat {
+  flex: 1;
+  min-width: 0;
+}
+.activity {
+  width: 300px;
+  flex: none;
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: rgba(15, 23, 42, 0.35);
+}
+.activity h4 {
+  margin: 0;
+  padding: 15px 16px;
+  font-size: 12px;
+  font-weight: 650;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.activity h4 .mono {
+  color: var(--faint);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.evs {
+  overflow-y: auto;
+  padding: 8px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.evs-empty {
+  padding: 14px 10px;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.ev {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  color: var(--text);
+}
+.ev:hover {
+  background: rgba(148, 163, 184, 0.05);
+}
+.evname {
+  flex: 1;
+}
+.evtype {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--faint);
+}
+.evdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--muted);
+}
+.evdot.ok {
+  background: var(--ok);
+}
+.evdot.warn {
+  background: var(--warn);
+}
+.evdot.err {
+  background: var(--err);
+}
+
 @media (max-width: 760px) {
   .app {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr) 30px;
+  }
+  .runwrap {
+    flex-direction: column;
+  }
+  .activity {
+    display: none;
   }
   .side {
     grid-row: 1;
