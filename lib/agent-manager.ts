@@ -1,5 +1,6 @@
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
 import { EVE_ENTRY, agentDir } from "./paths";
+import { getMeta } from "./store";
 import type { RunningState } from "./types";
 
 interface Running {
@@ -42,10 +43,23 @@ export async function startAgent(id: string): Promise<RunningState> {
   }
 
   const port = allocatePort();
+
+  // SECURITY: inject the model config (incl. API key) into the child's env at spawn
+  // time — never baked into the agent's source. The key lives only in .data (gitignored).
+  const meta = await getMeta(id);
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  if (meta) {
+    env.MODEL_PROVIDER_NAME = meta.model.providerName;
+    env.MODEL_BASE_URL = meta.model.baseURL;
+    env.MODEL_API_KEY = meta.model.apiKey ?? "";
+    env.MODEL_ID = meta.model.modelId;
+    env.MODEL_CONTEXT_WINDOW = String(meta.model.contextWindow);
+  }
+
   const proc = spawn(process.execPath, [EVE_ENTRY, "dev", "--no-ui", "--port", String(port)], {
     cwd: agentDir(id),
     stdio: ["ignore", "pipe", "pipe"],
-    env: process.env,
+    env,
   });
 
   const running: Running = { id, port, proc, ready: false, log: "", startedAt: Date.now() };

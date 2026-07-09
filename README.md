@@ -12,6 +12,12 @@ open-source agent framework, and reuses its durable runtime, sandbox, and channe
 so AIQY focuses on the layer Eve doesn't have: a visual, model-agnostic builder for
 everyone, not just developers.
 
+Or just **talk to Json** — a chat-first builder that designs the agent, writes the tool
+code itself (compiling and self-correcting until it works), and builds it while you
+describe what you want.
+
+![AIQY — describe, generate, run](assets/builder.png)
+
 ---
 
 ## Why AIQY
@@ -83,6 +89,26 @@ library for the gaps (`lib/tool-library.ts`): `http_request` (call any API),
 - [ ] AI-assisted builder — turn a one-liner into instructions + tool selection.
 - [ ] Studio — a visual run dashboard (session/turn/step waterfall + token/cost).
 - [ ] More channels (Slack, Telegram, WhatsApp, email) and a one-command Docker deploy.
+
+## Security
+
+AIQY is a **single-user, self-hosted** tool. Its security model:
+
+- **Your keys stay local.** API keys live only under `.data/` (gitignored, never
+  committed) and are injected into agents at runtime via the process environment — they
+  are **never written into an agent's source files**.
+- **Generated tool code is real code.** Agents (and Json) can generate tools whose
+  `execute()` runs in the agent's Node process with your user's permissions. Build and
+  run only agents you trust — treat it like running code you wrote.
+- **Nothing is exposed by default.** AIQY listens on localhost and agents run as local
+  processes. If you deploy it beyond your own machine, add authentication and isolate the
+  agent processes (e.g. one container per agent).
+
+## Screenshots
+
+| Run + live trace | Talk to Json | Connect any model |
+| --- | --- | --- |
+| ![chat](assets/chat.png) | ![json](assets/json.png) | ![settings](assets/settings.png) |
 
 ## Built on Eve
 

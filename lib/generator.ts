@@ -52,7 +52,9 @@ import { defineAgent } from "eve";
 const cfg = {
   providerName: process.env.MODEL_PROVIDER_NAME ?? ${JSON.stringify(model.providerName)},
   baseURL: process.env.MODEL_BASE_URL ?? ${JSON.stringify(model.baseURL)},
-  apiKey: process.env.MODEL_API_KEY ?? ${JSON.stringify(model.apiKey ?? "unused")},
+  // SECURITY: the API key is never baked into source. It is injected at runtime via
+  // the process env by AIQY's agent manager (from .data, which is gitignored).
+  apiKey: process.env.MODEL_API_KEY ?? "",
   modelId: process.env.MODEL_ID ?? ${JSON.stringify(model.modelId)},
   contextWindow: Number(process.env.MODEL_CONTEXT_WINDOW ?? "${model.contextWindow}"),
 };
@@ -76,18 +78,6 @@ import { eveChannel } from "eve/channels/eve";
 export default eveChannel({ auth: [localDev(), placeholderAuth()] });
 `;
 
-function envFile(model: ModelConfig): string {
-  return (
-    [
-      `MODEL_PROVIDER_NAME=${model.providerName}`,
-      `MODEL_BASE_URL=${model.baseURL}`,
-      `MODEL_API_KEY=${model.apiKey ?? "unused"}`,
-      `MODEL_ID=${model.modelId}`,
-      `MODEL_CONTEXT_WINDOW=${model.contextWindow}`,
-    ].join("\n") + "\n"
-  );
-}
-
 /** Write a complete, compilable Eve agent directory. Preserves .eve? no — resets source. */
 export async function generateAgent(spec: AgentSpec): Promise<string> {
   const dir = agentDir(spec.id);
@@ -98,7 +88,6 @@ export async function generateAgent(spec: AgentSpec): Promise<string> {
 
   await writeFile(join(dir, "package.json"), packageJson(spec));
   await writeFile(join(dir, "tsconfig.json"), TSCONFIG);
-  await writeFile(join(dir, ".env"), envFile(spec.model));
   await writeFile(join(dir, "agent", "agent.ts"), agentTs(spec.model));
   await writeFile(join(dir, "agent", "instructions.md"), `# Identity\n\n${spec.instructions}\n`);
   await writeFile(join(dir, "agent", "channels", "eve.ts"), CHANNEL_TS);
