@@ -13,6 +13,12 @@
   <a href="#built-on-eve">Built on Eve</a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/JellowBeanz26/aiqy/actions/workflows/ci.yml"><img src="https://github.com/JellowBeanz26/aiqy/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" />
+  <img src="https://img.shields.io/badge/node-%E2%89%A5%2024-brightgreen.svg" alt="Node >= 24" />
+</p>
+
 AIQY is an open-source, self-hostable studio for building AI agents. You write what
 the agent should do, pick a few tools, and AIQY generates a real agent, compiles it,
 and runs it — all on a model _you_ connect (any OpenAI-compatible endpoint, including
