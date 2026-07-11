@@ -96,6 +96,12 @@ In **Settings**, pick one:
 
 Then chat with your agent. That's it. 🎉
 
+> **Json writes real code.** When an agent needs a _custom tool_, Json writes the TypeScript for
+> it — compiling and self-correcting until it passes. This shines with a capable model: a local
+> MoE like `qwen3:30b-a3b`, or any cloud model. Tiny 3B models are great for _running_ agents but
+> may not reliably _write_ custom tools; if a tool doesn't come out right, Json says so instead of
+> shipping a broken agent.
+
 ## How it works
 
 ```
