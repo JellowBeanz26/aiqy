@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-// AIQY Eve-compatibility gate.
+// Manual Eve-compatibility check — run it by hand when updating Eve.
 //
 // Generates a representative agent that exercises every Eve API surface AIQY depends on
 // (defineAgent + createOpenAICompatible + modelContextWindowTokens for the BYO-model moat,
 // defineTool + never() for tools, eveChannel + localDev/placeholderAuth for channels),
 // installs Eve at a given version, and runs `eve info` to prove it still compiles.
 //
-// This is the linchpin of the "curate upstream Eve updates" strategy: if a new Eve release
-// breaks any shape AIQY relies on, `eve info` fails here — BEFORE it reaches a user.
+// Use it before bumping Eve: if a new release breaks any shape AIQY relies on, `eve info`
+// fails here — so you catch it before committing the update.
 //
 // Usage:
-//   node scripts/smoke.mjs                 # test the pinned Eve version (from lib/generator.ts)
-//   EVE_VERSION=0.23.0 node scripts/smoke.mjs   # test a candidate version (weekly bump job)
+//   node scripts/smoke.mjs                      # check the pinned Eve version (from lib/generator.ts)
+//   EVE_VERSION=0.23.0 node scripts/smoke.mjs   # check a candidate version before bumping to it
 
 import { execFileSync, execSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
