@@ -2,12 +2,15 @@ import { spawn } from "node:child_process";
 import { access, mkdir, writeFile } from "node:fs/promises";
 import { DATA_DIR, EVE_ENTRY } from "./paths";
 
-/** Deps installed ONCE at .data/ and shared by every generated agent (Node resolves up the tree). */
+// Shared Eve runtime, installed once into .data and shared by every generated agent
+// (Node resolves up the tree). Every version is EXACT-pinned (no `^` ranges) so upstream
+// Eve / AI-SDK releases can't change what an install pulls — you always get the exact set
+// AIQY was tested against. To adopt a newer Eve, bump these numbers deliberately.
 const SHARED_DEPS: Record<string, string> = {
-  "@ai-sdk/openai-compatible": "^3.0.6", // v3.x = AI SDK v7 line (verified)
-  ai: "^7.0.0",
-  eve: "0.22.1", // pinned — Eve is 0.x, fast-moving
-  zod: "^4.4.3",
+  "@ai-sdk/openai-compatible": "3.0.6",
+  ai: "7.0.18",
+  eve: "0.22.1",
+  zod: "4.4.3",
 };
 
 let installing: Promise<void> | null = null;
@@ -22,9 +25,8 @@ async function exists(p: string): Promise<boolean> {
 }
 
 /**
- * Ensure the shared Eve runtime is installed under .data/. Idempotent and
- * concurrency-safe: the first caller runs `npm install`, others await it.
- * ~30s the very first time; instant afterwards.
+ * Ensure the shared runtime is installed under .data/. Idempotent and concurrency-safe.
+ * ~30s the first time; instant afterwards.
  */
 export async function ensureSharedDeps(): Promise<void> {
   if (await exists(EVE_ENTRY)) return;
@@ -41,7 +43,7 @@ export async function ensureSharedDeps(): Promise<void> {
           version: "0.0.0",
           type: "module",
           dependencies: SHARED_DEPS,
-          overrides: { ai: "^7.0.0" },
+          overrides: { ai: "7.0.18" },
         },
         null,
         2,

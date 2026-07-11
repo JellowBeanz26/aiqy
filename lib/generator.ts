@@ -5,10 +5,10 @@ import type { AgentSpec, ModelConfig } from "./types";
 
 const EVE_VERSION = "0.22.1";
 const DEPS = {
-  "@ai-sdk/openai-compatible": "^3.0.6",
-  ai: "^7.0.0",
+  "@ai-sdk/openai-compatible": "3.0.6",
+  ai: "7.0.18",
   eve: EVE_VERSION,
-  zod: "^4.4.3",
+  zod: "4.4.3",
 };
 
 function packageJson(spec: AgentSpec): string {

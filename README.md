@@ -70,6 +70,8 @@ npm run dev
 
 Open **http://localhost:4300**. The first run installs a shared Eve runtime once (~30s — one time only).
 
+> **Pinned & reproducible.** AIQY installs Eve and the AI SDK at **exact** versions (no floating `^` ranges), so upstream releases can never change what your install pulls — you always get the exact set AIQY was tested against. You never install Eve by hand; AIQY does it for you.
+
 ### 3. Connect a model
 
 In **Settings**, pick one:
