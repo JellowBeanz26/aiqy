@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { agentDir } from "./paths";
 import type { AgentSpec, ModelConfig } from "./types";
 
-const EVE_VERSION = "0.22.1";
+const EVE_VERSION = "0.22.5";
 const DEPS = {
   "@ai-sdk/openai-compatible": "3.0.6",
   ai: "7.0.18",

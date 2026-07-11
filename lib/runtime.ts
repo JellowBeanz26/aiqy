@@ -9,7 +9,7 @@ import { DATA_DIR, EVE_ENTRY } from "./paths";
 const SHARED_DEPS: Record<string, string> = {
   "@ai-sdk/openai-compatible": "3.0.6",
   ai: "7.0.18",
-  eve: "0.22.1",
+  eve: "0.22.5",
   zod: "4.4.3",
 };
 
