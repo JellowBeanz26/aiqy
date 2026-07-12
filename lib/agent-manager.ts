@@ -1,6 +1,6 @@
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
 import { EVE_ENTRY, agentDir } from "./paths";
-import { getMeta } from "./store";
+import { getMeta, getSecrets } from "./store";
 import type { RunningState } from "./types";
 
 interface Running {
@@ -55,6 +55,9 @@ export async function startAgent(id: string): Promise<RunningState> {
     env.MODEL_ID = meta.model.modelId;
     env.MODEL_CONTEXT_WINDOW = String(meta.model.contextWindow);
   }
+  // SECURITY: inject the agent's own secrets (API keys / bot tokens) into the child env —
+  // read from .data (gitignored), never baked into source, never seen by the model.
+  for (const [key, value] of Object.entries(await getSecrets(id))) env[key] = value;
 
   const proc = spawn(process.execPath, [EVE_ENTRY, "dev", "--no-ui", "--port", String(port)], {
     cwd: agentDir(id),

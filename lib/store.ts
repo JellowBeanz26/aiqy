@@ -1,5 +1,5 @@
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
-import { AGENTS_DIR, DATA_DIR, SETTINGS_FILE, agentDir, agentMetaFile } from "./paths";
+import { AGENTS_DIR, DATA_DIR, SETTINGS_FILE, agentDir, agentMetaFile, agentSecretsFile } from "./paths";
 import type { AgentMeta, ModelConfig } from "./types";
 
 export const DEFAULT_MODEL: ModelConfig = {
@@ -50,6 +50,35 @@ export async function listAgents(): Promise<AgentMeta[]> {
 
 export async function deleteAgent(id: string): Promise<void> {
   await rm(agentDir(id), { recursive: true, force: true });
+}
+
+/* ---- Per-agent secrets (API keys / tokens) — local only, never committed or sent to the model ---- */
+
+export async function getSecrets(id: string): Promise<Record<string, string>> {
+  try {
+    return JSON.parse(await readFile(agentSecretsFile(id), "utf8")) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+/** Names only — the client never receives secret values. */
+export async function listSecretNames(id: string): Promise<string[]> {
+  return Object.keys(await getSecrets(id));
+}
+
+export async function setSecret(id: string, name: string, value: string): Promise<void> {
+  const secrets = await getSecrets(id);
+  secrets[name] = value;
+  await mkdir(agentDir(id), { recursive: true });
+  await writeFile(agentSecretsFile(id), JSON.stringify(secrets, null, 2));
+}
+
+export async function deleteSecret(id: string, name: string): Promise<void> {
+  const secrets = await getSecrets(id);
+  if (!(name in secrets)) return;
+  delete secrets[name];
+  await writeFile(agentSecretsFile(id), JSON.stringify(secrets, null, 2));
 }
 
 /** Turn a name into a unique, filesystem-safe agent id. */

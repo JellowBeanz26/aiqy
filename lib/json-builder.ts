@@ -1,7 +1,7 @@
 import { generateAgent } from "./generator";
 import { getSettings, makeAgentId, saveMeta } from "./store";
 import { TOOL_LIBRARY, toolsBySlug } from "./tool-library";
-import type { AgentMeta, AgentSpec, ModelConfig, ToolSpec } from "./types";
+import type { AgentMeta, AgentSpec, ModelConfig, SecretSpec, ToolSpec } from "./types";
 import { validateAgent } from "./validate";
 
 export interface ChatMsg {
@@ -19,6 +19,7 @@ interface BuildSpec {
   instructions: string;
   libraryTools: string[];
   customTools: CustomTool[];
+  secrets: SecretSpec[];
 }
 
 export interface BuildResult {
@@ -28,6 +29,8 @@ export interface BuildResult {
   error: string | null;
   attempts: number;
   missingTools: string[];
+  /** Credentials the agent needs. The UI collects these into a secure field per key. */
+  secrets: SecretSpec[];
 }
 
 export interface JsonResult {
@@ -66,11 +69,12 @@ Guidelines:
 - Library tools you may attach by slug:
 ${lib}
 - If the agent needs something the built-ins/library don't cover, WRITE a custom tool.
+- If a tool needs an external credential (API key, bot token, DB url…), NEVER hardcode it or ask for it in code. Declare it as a secret (see below) and read it in code via process.env.<NAME>.
 
 OUTPUT FORMAT when you are ready to build — first a short sentence, then EXACTLY:
-1) one fenced json block with the plan (custom tool NAMES only, no code inside the json):
+1) one fenced json block with the plan (custom tool NAMES only, no code inside the json; include "secrets" only when a credential is needed):
 \`\`\`json
-{"build": true, "name": "<short name>", "instructions": "<the agent's system prompt>", "libraryTools": [<slugs>], "customTools": [<custom tool slugs>]}
+{"build": true, "name": "<short name>", "instructions": "<the agent's system prompt>", "libraryTools": [<slugs>], "customTools": [<custom tool slugs>], "secrets": [{"name": "<ENV_NAME>", "description": "<what it's for>", "howto": "<how to get it>"}]}
 \`\`\`
 2) then, for EACH custom tool slug, a separate typescript code block whose FIRST line is "// tool: <slug>":
 Full example:
@@ -81,7 +85,13 @@ Custom-tool rules (follow EXACTLY — the file must compile):
 - Imports: \`import { defineTool } from "eve/tools";\` \`import { never } from "eve/tools/approval";\` \`import { z } from "zod";\`.
 - \`approval: never()\`, a one-line \`description\`, and an \`inputSchema\` are ALL required. If the tool takes no input, use \`inputSchema: z.object({})\` — never \`z.object()\`.
 - \`execute\` is async and MUST return an OBJECT (e.g. \`return { result };\`), never a bare number/string.
-- Do NOT put code inside the json block. Only output the json + code blocks when you actually intend to build now.`;
+- Do NOT put code inside the json block. Only output the json + code blocks when you actually intend to build now.
+
+Secrets (API keys / tokens): when a tool needs a credential, add it to "secrets" with an UPPER_SNAKE env "name", a short "description", and clear "howto" steps — and read it in code with process.env.<NAME>. In your conversational reply, tell the user which keys are needed and walk them step-by-step through getting each one (use the howto). The user pastes each key into a secure field, so you NEVER see the value — don't ask them to type it in chat. Known steps to reuse when relevant:
+- Telegram bot token → env TELEGRAM_BOT_TOKEN, howto: "Open Telegram, message @BotFather, send /newbot, choose a name and a username ending in 'bot', then copy the token it gives you."
+- OpenWeather → env OPENWEATHER_API_KEY, howto: "Sign up free at openweathermap.org, open 'API keys', and copy your key (it can take a few minutes to activate)."
+- News → env NEWS_API_KEY, howto: "Sign up free at newsapi.org and copy the API key from your dashboard."
+For anything else, give your own accurate step-by-step.`;
 }
 
 async function callModel(m: ModelConfig, messages: ChatMsg[], temperature = 0.4): Promise<string> {
@@ -204,6 +214,18 @@ function extractBuild(content: string): { text: string; spec: BuildSpec | null; 
     .filter((t) => isPlausibleTool(t.code));
   const missing = wantedCustom.filter((slug) => !customTools.some((t) => t.slug === slug));
 
+  const secrets: SecretSpec[] = (Array.isArray(obj.secrets) ? (obj.secrets as unknown[]) : [])
+    .map((s) => (s ?? {}) as Record<string, unknown>)
+    .filter((s) => typeof s.name === "string" && String(s.name).trim().length > 0)
+    .map((s) => ({
+      name: String(s.name)
+        .trim()
+        .replace(/[^A-Za-z0-9_]/g, "_")
+        .toUpperCase(),
+      description: String(s.description ?? "").trim() || String(s.name).trim(),
+      howto: String(s.howto ?? "").trim(),
+    }));
+
   const spec: BuildSpec = {
     name: String(obj.name ?? "New agent").slice(0, 60) || "New agent",
     instructions: String(obj.instructions ?? "You are a helpful assistant."),
@@ -211,6 +233,7 @@ function extractBuild(content: string): { text: string; spec: BuildSpec | null; 
       ? (obj.libraryTools as unknown[]).map(String).filter((s) => validLib.has(s))
       : [],
     customTools,
+    secrets,
   };
 
   return { text: stripFences(content) || `Building “${spec.name}”…`, spec, missing };
@@ -304,7 +327,15 @@ async function buildFromSpec(m: ModelConfig, spec: BuildSpec, missing: string[])
   };
   await saveMeta(meta);
   // "ok" means we built what was asked: it compiles AND no planned tool is missing.
-  return { agentId: id, name: spec.name, ok: ok && stillMissing.length === 0, error, attempts, missingTools: stillMissing };
+  return {
+    agentId: id,
+    name: spec.name,
+    ok: ok && stillMissing.length === 0,
+    error,
+    attempts,
+    missingTools: stillMissing,
+    secrets: spec.secrets,
+  };
 }
 
 /** One turn of talking to Json. If Json decided to build, the agent is generated + self-corrected. */

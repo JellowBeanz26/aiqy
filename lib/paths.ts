@@ -20,3 +20,6 @@ export const SETTINGS_FILE = join(DATA_DIR, "settings.json");
 
 export const agentDir = (id: string): string => join(AGENTS_DIR, id);
 export const agentMetaFile = (id: string): string => join(agentDir(id), "meta.json");
+/** Per-agent secrets (API keys / tokens). Lives at the agent root, so it SURVIVES a
+ *  regenerate (generateAgent only wipes agent/ and .eve/). Never committed (.data is gitignored). */
+export const agentSecretsFile = (id: string): string => join(agentDir(id), "secrets.json");

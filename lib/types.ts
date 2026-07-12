@@ -16,6 +16,18 @@ export interface ToolSpec {
   source: string;
 }
 
+/** A credential an agent needs at runtime (an API key, bot token, …). The value is stored
+ *  locally in .data (gitignored), injected into the agent's process env at spawn, and NEVER
+ *  written into source or sent to the model. */
+export interface SecretSpec {
+  /** Env var name the tool code reads via process.env, e.g. "OPENWEATHER_API_KEY". */
+  name: string;
+  /** What it's for, shown to the user. */
+  description: string;
+  /** Short step-by-step on how to obtain it. */
+  howto: string;
+}
+
 export interface AgentSpec {
   id: string;
   name: string;
