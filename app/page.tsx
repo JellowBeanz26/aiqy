@@ -15,6 +15,7 @@ export default function Page() {
   const [settings, setSettings] = useState<ModelConfig | null>(null);
   const [mode, setMode] = useState<Mode>("builder");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<AgentMeta | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [ops, setOps] = useState(0);
 
@@ -69,7 +70,7 @@ export default function Page() {
           AIQY<span className="slashes">//</span>
           <span className="tag">studio</span>
         </button>
-        <button className={`jsonbtn ${mode === "json" ? "on" : ""}`} type="button" onClick={() => { setMode("json"); setSelectedId(null); }}>
+        <button className={`jsonbtn ${mode === "json" ? "on" : ""}`} type="button" onClick={() => { setMode("json"); setSelectedId(null); setEditing(null); }}>
           <span className="spark">✦</span> Build with Json
         </button>
         <button
@@ -78,6 +79,7 @@ export default function Page() {
           onClick={() => {
             setMode("builder");
             setSelectedId(null);
+            setEditing(null);
           }}
         >
           <span className="plus">+</span> New agent
@@ -117,9 +119,9 @@ export default function Page() {
       <main className="main">
         <div className="topbar">
           <div className="crumb">
-            <b>{mode === "settings" ? "Settings" : mode === "agent" && selected ? selected.name : "New agent"}</b>
+            <b>{mode === "settings" ? "Settings" : mode === "agent" && selected ? selected.name : editing ? editing.name : "New agent"}</b>
             <span className="sep">//</span>
-            <span>{mode === "settings" ? "model connection" : mode === "agent" ? "run" : "describe & build"}</span>
+            <span>{mode === "settings" ? "model connection" : mode === "agent" ? "run" : editing ? "edit & regenerate" : "describe & build"}</span>
           </div>
           <div className="metric">
             <span className="dot ok" />
@@ -159,19 +161,27 @@ export default function Page() {
         ) : mode === "agent" && selected ? (
           <Chat
             agent={selected}
+            onEdit={() => {
+              setEditing(selected);
+              setMode("builder");
+            }}
             onDeleted={async (id) => {
               await refreshAgents();
               setSelectedId(null);
               setMode("builder");
+              setEditing(null);
               flash(`Deleted ${id}.`);
             }}
           />
         ) : (
           <Builder
+            key={editing?.id ?? "new"}
+            editing={editing}
             onCreated={async (id) => {
               await refreshAgents();
               setSelectedId(id);
               setMode("agent");
+              setEditing(null);
             }}
             flash={flash}
           />
@@ -181,7 +191,7 @@ export default function Page() {
       <footer className="statusbar">
         <span className="sb live">● host</span>
         <span className="sb">
-          <b>eve</b> 0.22.1
+          <b>eve</b> 0.22.5
         </span>
         <span className="sb">
           <b>runtime</b> {ready === null ? "…" : ready ? "durable" : "not set up"}
@@ -200,14 +210,27 @@ export default function Page() {
 }
 
 /* ---------------- Builder ---------------- */
-function Builder({ onCreated, flash }: { onCreated: (id: string) => void; flash: (m: string) => void }) {
-  const [name, setName] = useState("");
-  const [prompt, setPrompt] = useState("Summarize any URL I send and reply with a short summary.");
-  const [tools, setTools] = useState<string[]>(["http_request"]);
+function Builder({
+  onCreated,
+  flash,
+  editing,
+}: {
+  onCreated: (id: string) => void;
+  flash: (m: string) => void;
+  editing?: AgentMeta | null;
+}) {
+  const isLibrary = (slug: string) => TOOL_LIBRARY.some((t) => t.slug === slug);
+  const [name, setName] = useState(editing?.name ?? "");
+  const [prompt, setPrompt] = useState(editing?.prompt ?? "Summarize any URL I send and reply with a short summary.");
+  const [tools, setTools] = useState<string[]>(editing ? editing.toolSlugs.filter(isLibrary) : ["http_request"]);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ validation: Validation } | null>(null);
   const [idea, setIdea] = useState("");
   const [designing, setDesigning] = useState(false);
+
+  // Custom tools Json wrote (not in the library) aren't shown as toggles, but the edit route
+  // preserves them — surface them so the user knows they're kept.
+  const customTools = editing ? editing.toolSlugs.filter((s) => !isLibrary(s)) : [];
 
   function toggle(slug: string) {
     setTools((t) => (t.includes(slug) ? t.filter((s) => s !== slug) : [...t, slug]));
@@ -241,19 +264,19 @@ function Builder({ onCreated, flash }: { onCreated: (id: string) => void; flash:
     setBusy(true);
     setResult(null);
     try {
-      const r = await fetch("/api/agents", {
-        method: "POST",
+      const r = await fetch(editing ? `/api/agents/${editing.id}` : "/api/agents", {
+        method: editing ? "PUT" : "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: name || prompt.slice(0, 40), prompt, toolSlugs: tools }),
       });
       const j = (await r.json()) as { id?: string; validation?: Validation; error?: string };
       if (r.ok && j.id) {
-        flash("Agent built · ready");
+        flash(editing ? "Changes saved · ready" : "Agent built · ready");
         onCreated(j.id);
       } else if (j.validation) {
         setResult({ validation: j.validation });
       } else {
-        flash(j.error || "Build failed.");
+        flash(j.error || (editing ? "Save failed." : "Build failed."));
       }
     } finally {
       setBusy(false);
@@ -263,16 +286,26 @@ function Builder({ onCreated, flash }: { onCreated: (id: string) => void; flash:
   return (
     <div className="canvas">
       <div className="eyebrow">
-        <span className="bar" /> describe · generate · run
+        <span className="bar" /> {editing ? "edit · regenerate · run" : "describe · generate · run"}
       </div>
       <h1 className="q">
-        What should your <em>agent</em> do?
+        {editing ? (
+          <>
+            Edit <em>{editing.name}</em>
+          </>
+        ) : (
+          <>
+            What should your <em>agent</em> do?
+          </>
+        )}
       </h1>
       <p className="sub">
-        Write it in plain language — it becomes the agent&apos;s brain. AIQY generates a real, durable agent on your own
-        model, then runs it.
+        {editing
+          ? "Tweak the instructions or tools — AIQY regenerates the agent on your model. Any custom tools Json wrote are kept."
+          : "Write it in plain language — it becomes the agent's brain. AIQY generates a real, durable agent on your own model, then runs it."}
       </p>
 
+      {!editing && (
       <div className="aidesign">
         <div className="ai-eyebrow">✨ design with AI</div>
         <div className="ai-row">
@@ -295,6 +328,7 @@ function Builder({ onCreated, flash }: { onCreated: (id: string) => void; flash:
         </div>
         <div className="ai-hint">The model drafts a name, instructions, and tools below — review, tweak, then build.</div>
       </div>
+      )}
 
       <div className="builder">
         <input
@@ -324,9 +358,16 @@ function Builder({ onCreated, flash }: { onCreated: (id: string) => void; flash:
           ))}
           <span className="spacer" />
           <button className="build" type="button" onClick={build} disabled={busy || !prompt.trim()}>
-            {busy ? "Building…" : "Build agent"} <span className="arrow">→</span>
+            {busy ? (editing ? "Saving…" : "Building…") : editing ? "Save changes" : "Build agent"}{" "}
+            <span className="arrow">→</span>
           </button>
         </div>
+        {editing && customTools.length > 0 && (
+          <div className="ai-hint" style={{ marginTop: 10 }}>
+            Keeping {customTools.length} custom tool{customTools.length > 1 ? "s" : ""} Json wrote:{" "}
+            <b>{customTools.join(", ")}</b>
+          </div>
+        )}
       </div>
 
       {result && (

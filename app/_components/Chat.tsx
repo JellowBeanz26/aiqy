@@ -43,7 +43,15 @@ function evClass(t: string): string {
   return "";
 }
 
-export default function Chat({ agent, onDeleted }: { agent: AgentMeta; onDeleted: (id: string) => void }) {
+export default function Chat({
+  agent,
+  onEdit,
+  onDeleted,
+}: {
+  agent: AgentMeta;
+  onEdit: () => void;
+  onDeleted: (id: string) => void;
+}) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -127,6 +135,9 @@ export default function Chat({ agent, onDeleted }: { agent: AgentMeta; onDeleted
           </div>
           <span className="spacer" />
           <span className="pill">{STATUS_LABEL[status]}</span>
+          <button type="button" className="btn" onClick={onEdit}>
+            Edit
+          </button>
           <button type="button" className="btn" onClick={stop}>
             Stop
           </button>
