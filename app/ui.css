@@ -452,6 +452,39 @@ h1.q em {
   color: var(--muted);
 }
 
+/* model recommendation callout (Settings → Local model) */
+.modeltip {
+  margin-top: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.32);
+  border-radius: var(--r);
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.04));
+  padding: 12px 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.modeltip strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.modeltip code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--blue);
+  background: rgba(59, 130, 246, 0.1);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+.tip-eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93c5fd;
+  margin-bottom: 6px;
+}
+
 /* generated output / validation */
 .out {
   margin-top: 24px;

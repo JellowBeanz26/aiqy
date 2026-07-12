@@ -525,6 +525,13 @@ function Settings({ settings, onSave }: { settings: ModelConfig | null; onSave: 
               </button>
             </div>
             <span className="hint">Ollama, LM Studio, vLLM… AIQY lists the models you have installed.</span>
+            <div className="modeltip">
+              <span className="tip-eyebrow">Which open-source model?</span>
+              A <strong>~3B</strong> model (e.g. <code>qwen2.5:3b</code>) is great for running simple agents and
+              chatting. But for <strong>Json</strong> to reliably <em>write custom tool code</em>, use a more capable
+              model — a <strong>7B+</strong> on a GPU, or an <strong>MoE</strong> like <code>qwen3:30b-a3b</code> on a
+              CPU-only machine. Smaller models may fail to write working tools.
+            </div>
           </div>
         )}
 
